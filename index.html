@@ -9,20 +9,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0c0a08;
-  --bg-2: #14110c;
-  --bg-3: #1c1812;
-  --ink: #ece4d3;
-  --ink-2: #b8ad97;
-  --ink-3: #847b69;
-  --ink-4: #4a4438;
-  --rule: #2a241c;
-  --rule-2: #3a3226;
-  --gold: #d4a347;
-  --gold-2: #f0c469;
-  --gold-3: #b88830;
-  --oxblood: #c25555;
-  --sage: #8aa56a;
+  --bg: #0a1828;
+  --bg-2: #112338;
+  --bg-3: #1a2c47;
+  --ink: #F4E8DD;
+  --ink-2: #B7C8D6;
+  --ink-3: #6E7E94;
+  --ink-4: #3a4a64;
+  --rule: #1F2E48;
+  --rule-2: #2A3D5A;
+  --gold: #4B9CD3;
+  --gold-2: #7BC4F0;
+  --gold-3: #2A6FA0;
+  --oxblood: #C2554A;
+  --sage: #6FA585;
   --serif: 'Fraunces', serif;
   --sans: 'IBM Plex Sans', sans-serif;
   --mono: 'IBM Plex Mono', monospace;
@@ -47,8 +47,8 @@ body::before {
   position: fixed;
   inset: 0;
   background-image:
-    radial-gradient(ellipse 80% 50% at 90% 0%, rgba(212, 163, 71, 0.08), transparent 60%),
-    radial-gradient(ellipse 60% 40% at 0% 100%, rgba(184, 69, 69, 0.05), transparent 70%);
+    radial-gradient(ellipse 80% 50% at 90% 0%, rgba(75, 156, 211, 0.12), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgba(123, 196, 240, 0.05), transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -381,7 +381,7 @@ button.run::before {
 .segmented button:last-child { border-right: 1px solid var(--rule); }
 .segmented button:hover { color: var(--ink); background: var(--bg-3); }
 .segmented button.active {
-  background: rgba(212, 163, 71, 0.12);
+  background: rgba(75, 156, 211, 0.14);
   color: var(--gold-2);
   border-color: var(--gold);
   position: relative;
@@ -479,7 +479,7 @@ button.run::before {
   font-size: 10.5px;
   letter-spacing: 0.04em;
   color: var(--ink-2);
-  background: rgba(212, 163, 71, 0.05);
+  background: rgba(75, 156, 211, 0.06);
   border-left: 2px solid var(--gold);
   display: none;
   line-height: 1.45;
@@ -488,7 +488,7 @@ button.run::before {
 .status.error {
   color: var(--oxblood);
   border-left-color: var(--oxblood);
-  background: rgba(184, 69, 69, 0.05);
+  background: rgba(194, 85, 74, 0.06);
 }
 
 .status.show { display: block; }
@@ -824,8 +824,8 @@ footer .legend {
           <div class="chart-legend">
             <div class="item"><span class="swatch" style="background: var(--ink);"></span>Historical price</div>
             <div class="item"><span class="swatch" style="background: var(--gold);"></span>Median forecast</div>
-            <div class="item"><span class="swatch fill" style="background: rgba(212, 163, 71, 0.3);"></span>25–75% band</div>
-            <div class="item"><span class="swatch fill" style="background: rgba(212, 163, 71, 0.12);"></span>5–95% band</div>
+            <div class="item"><span class="swatch fill" style="background: rgba(75, 156, 211, 0.3);"></span>25–75% band</div>
+            <div class="item"><span class="swatch fill" style="background: rgba(75, 156, 211, 0.14);"></span>5–95% band</div>
             <div class="item"><span class="swatch" style="background: var(--ink-3); height: 1px; border-top: 1px dashed var(--ink-3);"></span>Spot S₀</div>
           </div>
         </section>
@@ -991,11 +991,11 @@ footer .legend {
       const end = Math.max(2, Math.floor(steps * progress));
 
       // Background tone for forecast region
-      ctx.fillStyle = 'rgba(212, 163, 71, 0.025)';
+      ctx.fillStyle = 'rgba(75, 156, 211, 0.025)';
       ctx.fillRect(todayX, pad.t, pad.l + cw - todayX, ch);
 
       // Y gridlines
-      ctx.strokeStyle = 'rgba(42, 36, 28, 0.9)';
+      ctx.strokeStyle = 'rgba(31, 46, 72, 0.9)';
       ctx.lineWidth = 0.5;
       ctx.font = '10px "IBM Plex Mono", monospace';
       ctx.fillStyle = '#847b69';
@@ -1017,7 +1017,7 @@ footer .legend {
       }
 
       // S0 reference line
-      ctx.strokeStyle = 'rgba(184, 173, 151, 0.55)';
+      ctx.strokeStyle = 'rgba(183, 200, 214, 0.55)';
       ctx.setLineDash([3, 4]);
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -1028,7 +1028,7 @@ footer .legend {
 
       // Historical price line (always fully drawn)
       if (histN > 1) {
-        ctx.strokeStyle = '#ece4d3';
+        ctx.strokeStyle = '#F4E8DD';
         ctx.lineWidth = 1.4;
         ctx.beginPath();
         ctx.moveTo(xs(0), ys(history[0].close));
@@ -1036,7 +1036,7 @@ footer .legend {
         ctx.stroke();
 
         // Subtle fill below history line
-        ctx.fillStyle = 'rgba(236, 228, 211, 0.04)';
+        ctx.fillStyle = 'rgba(244, 232, 221, 0.04)';
         ctx.beginPath();
         ctx.moveTo(xs(0), pad.t + ch);
         for (let i = 0; i < histN; i++) ctx.lineTo(xs(i), ys(history[i].close));
@@ -1046,11 +1046,11 @@ footer .legend {
       }
 
       // Forecast bands
-      drawBand(bands[0], bands[4], end, 'rgba(212, 163, 71, 0.10)');
-      drawBand(bands[1], bands[3], end, 'rgba(212, 163, 71, 0.22)');
+      drawBand(bands[0], bands[4], end, 'rgba(75, 156, 211, 0.10)');
+      drawBand(bands[1], bands[3], end, 'rgba(75, 156, 211, 0.22)');
 
       // Forecast sample paths (faint)
-      ctx.strokeStyle = 'rgba(240, 196, 105, 0.07)';
+      ctx.strokeStyle = 'rgba(123, 196, 240, 0.07)';
       ctx.lineWidth = 0.7;
       for (const path of samplePaths) {
         ctx.beginPath();
@@ -1060,9 +1060,9 @@ footer .legend {
       }
 
       // Forecast median
-      ctx.strokeStyle = '#f0c469';
+      ctx.strokeStyle = '#7BC4F0';
       ctx.lineWidth = 2;
-      ctx.shadowColor = 'rgba(240, 196, 105, 0.55)';
+      ctx.shadowColor = 'rgba(123, 196, 240, 0.55)';
       ctx.shadowBlur = 10;
       ctx.beginPath();
       ctx.moveTo(xs(todayIdx + 0), ys(bands[2][0]));
@@ -1073,11 +1073,11 @@ footer .legend {
       // Median terminal dot
       if (end >= steps) {
         const tx = xs(todayIdx + steps - 1), ty = ys(bands[2][steps - 1]);
-        ctx.fillStyle = '#f0c469';
+        ctx.fillStyle = '#7BC4F0';
         ctx.beginPath();
         ctx.arc(tx, ty, 3.2, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(240, 196, 105, 0.4)';
+        ctx.strokeStyle = 'rgba(123, 196, 240, 0.4)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(tx, ty, 7, 0, Math.PI * 2);
@@ -1086,7 +1086,7 @@ footer .legend {
 
       // "Today" vertical separator
       if (histN > 0) {
-        ctx.strokeStyle = 'rgba(212, 163, 71, 0.45)';
+        ctx.strokeStyle = 'rgba(75, 156, 211, 0.45)';
         ctx.setLineDash([4, 4]);
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -1096,7 +1096,7 @@ footer .legend {
         ctx.setLineDash([]);
 
         // "TODAY" label at top
-        ctx.fillStyle = '#d4a347';
+        ctx.fillStyle = '#4B9CD3';
         ctx.font = '9px "IBM Plex Mono", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
@@ -1122,7 +1122,7 @@ footer .legend {
         const x = xs(idx);
         ctx.fillText(text, x, pad.t + ch + 12);
         // small tick
-        ctx.strokeStyle = 'rgba(74, 68, 56, 0.6)';
+        ctx.strokeStyle = 'rgba(58, 74, 100, 0.6)';
         ctx.lineWidth = 0.6;
         ctx.beginPath();
         ctx.moveTo(x, pad.t + ch);
@@ -1131,13 +1131,13 @@ footer .legend {
       }
 
       // S0 label on Y axis
-      ctx.fillStyle = '#ece4d3';
+      ctx.fillStyle = '#F4E8DD';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.font = '11px "IBM Plex Mono", monospace';
       const s0Decimals = S0 < 10 ? 2 : 0;
       ctx.fillText('$' + S0.toFixed(s0Decimals), pad.l + cw + 8, s0y);
-      ctx.fillStyle = '#d4a347';
+      ctx.fillStyle = '#4B9CD3';
       ctx.font = 'italic 10px "Fraunces", serif';
       const s0Width = ctx.measureText('$' + S0.toFixed(s0Decimals)).width;
       ctx.fillText('S₀', pad.l + cw + 14 + s0Width + 4, s0y);
@@ -1222,8 +1222,8 @@ footer .legend {
     for (let i = 0; i <= yTicks; i++) {
       const v = (i / yTicks) * maxBin;
       const y = ys(v);
-      parts.push(`<line x1="${pad.l}" y1="${y}" x2="${pad.l + cw}" y2="${y}" stroke="#2a241c" stroke-width="0.5"/>`);
-      parts.push(`<text x="${pad.l - 8}" y="${y + 3}" fill="#847b69" font-family="IBM Plex Mono" font-size="10" text-anchor="end">${v.toFixed(0)}</text>`);
+      parts.push(`<line x1="${pad.l}" y1="${y}" x2="${pad.l + cw}" y2="${y}" stroke="#1F2E48" stroke-width="0.5"/>`);
+      parts.push(`<text x="${pad.l - 8}" y="${y + 3}" fill="#6E7E94" font-family="IBM Plex Mono" font-size="10" text-anchor="end">${v.toFixed(0)}</text>`);
     }
 
     // Bars
@@ -1244,8 +1244,8 @@ footer .legend {
     // S0 marker
     const s0X = xs(S0);
     if (s0X >= pad.l && s0X <= pad.l + cw) {
-      parts.push(`<line x1="${s0X}" y1="${pad.t}" x2="${s0X}" y2="${pad.t + ch}" stroke="#b8ad97" stroke-dasharray="3 4" stroke-width="1"/>`);
-      parts.push(`<text x="${s0X + 6}" y="${pad.t + 14}" fill="#b8ad97" font-family="Fraunces" font-style="italic" font-size="12">S₀ ${fmtUSD(S0, 0)}</text>`);
+      parts.push(`<line x1="${s0X}" y1="${pad.t}" x2="${s0X}" y2="${pad.t + ch}" stroke="#B7C8D6" stroke-dasharray="3 4" stroke-width="1"/>`);
+      parts.push(`<text x="${s0X + 6}" y="${pad.t + 14}" fill="#B7C8D6" font-family="Fraunces" font-style="italic" font-size="12">S₀ ${fmtUSD(S0, 0)}</text>`);
     }
 
     // X axis ticks
@@ -1253,11 +1253,11 @@ footer .legend {
     for (let i = 0; i <= xTicks; i++) {
       const v = lo + (i / xTicks) * (hi - lo);
       const x = xs(v);
-      parts.push(`<text x="${x}" y="${pad.t + ch + 18}" fill="#847b69" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">$${v.toFixed(0)}</text>`);
+      parts.push(`<text x="${x}" y="${pad.t + ch + 18}" fill="#6E7E94" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">$${v.toFixed(0)}</text>`);
     }
 
     // Y axis label
-    parts.push(`<text x="${pad.l - 8}" y="${pad.t - 4}" fill="#847b69" font-family="IBM Plex Mono" font-size="9" text-anchor="end" letter-spacing="1">N</text>`);
+    parts.push(`<text x="${pad.l - 8}" y="${pad.t - 4}" fill="#6E7E94" font-family="IBM Plex Mono" font-size="9" text-anchor="end" letter-spacing="1">N</text>`);
 
     svg.innerHTML = parts.join('');
   }
