@@ -511,6 +511,90 @@ button.run::before {
 
 button.run:disabled { opacity: 0.55; cursor: not-allowed; }
 
+/* ===== Tooltip ===== */
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: rgba(10, 24, 40, 0.96);
+  border: 1px solid var(--rule-2);
+  padding: 11px 13px 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  z-index: 1000;
+  display: none;
+  min-width: 188px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+}
+
+.tooltip.show { display: block; opacity: 1; }
+
+.tooltip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 8px;
+  height: 8px;
+  border-top: 1px solid var(--gold);
+  border-left: 1px solid var(--gold);
+}
+
+.tooltip .tip-date {
+  color: var(--gold);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 7px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tooltip .tip-date .badge {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 11.5px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+
+.tooltip .tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 3px 0;
+  align-items: baseline;
+}
+
+.tooltip .tip-row .lbl {
+  color: var(--ink-3);
+  font-size: 10px;
+}
+
+.tooltip .tip-row .val {
+  color: var(--ink);
+  font-feature-settings: 'tnum' 1;
+  font-weight: 400;
+}
+
+.tooltip .tip-row .val.gold { color: var(--gold-2); }
+.tooltip .tip-row .val.sage { color: var(--sage); }
+.tooltip .tip-row .val.oxblood { color: var(--oxblood); }
+.tooltip .tip-row .val.dim { color: var(--ink-3); font-size: 10px; }
+
+#paths-canvas { cursor: crosshair; }
+#hist-svg { cursor: crosshair; }
+
+.hist-bar { transition: opacity 0.12s; }
+
 /* ===== Main column ===== */
 .main-column {
   display: flex;
@@ -858,6 +942,9 @@ footer .legend {
 
     </main>
 
+    <div class="tooltip" id="paths-tooltip"></div>
+    <div class="tooltip" id="hist-tooltip"></div>
+
     <footer>
       <span>Monte Carlo · Stochastic Forecast Terminal</span>
       <span class="legend">Figure I. — Outputs derive from a closed-form Geometric Brownian Motion process: <em>dS / S = μ dt + σ dW</em>. Random innovations sampled via the Box–Muller transform from a uniform PRNG seeded by the user agent.</span>
@@ -932,6 +1019,8 @@ footer .legend {
   }
 
   // ===== Canvas paths chart (history + forecast) =====
+  let pathsState = null;
+
   function renderPaths(canvas, history, samplePaths, bands, S0, T, animate = true) {
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
@@ -986,7 +1075,7 @@ footer .legend {
       ctx.fill();
     }
 
-    function drawFrame(progress) {
+    function drawFrame(progress, hoverIdx) {
       ctx.clearRect(0, 0, w, h);
       const end = Math.max(2, Math.floor(steps * progress));
 
@@ -1141,7 +1230,73 @@ footer .legend {
       ctx.font = 'italic 10px "Fraunces", serif';
       const s0Width = ctx.measureText('$' + S0.toFixed(s0Decimals)).width;
       ctx.fillText('S₀', pad.l + cw + 14 + s0Width + 4, s0y);
+
+      // Crosshair overlay (only on completed frames)
+      if (progress >= 1 && hoverIdx >= 0 && hoverIdx < total) drawCrosshair(hoverIdx);
     }
+
+    function drawCrosshair(idx) {
+      const x = xs(idx);
+      const inHistory = idx < histN;
+      let valY, valNum;
+      if (inHistory) {
+        valNum = history[idx].close;
+        valY = ys(valNum);
+      } else {
+        const fIdx = idx - histN + 1;
+        valNum = bands[2][Math.min(steps - 1, Math.max(0, fIdx))];
+        valY = ys(valNum);
+      }
+
+      // Vertical guide
+      ctx.strokeStyle = 'rgba(123, 196, 240, 0.55)';
+      ctx.setLineDash([2, 3]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, pad.t);
+      ctx.lineTo(x, pad.t + ch);
+      ctx.stroke();
+
+      // Horizontal guide at value
+      ctx.strokeStyle = 'rgba(123, 196, 240, 0.32)';
+      ctx.beginPath();
+      ctx.moveTo(pad.l, valY);
+      ctx.lineTo(pad.l + cw, valY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Indicator dot
+      ctx.fillStyle = inHistory ? '#F4E8DD' : '#7BC4F0';
+      ctx.beginPath();
+      ctx.arc(x, valY, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(123, 196, 240, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x, valY, 9, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Y-axis price chip
+      ctx.fillStyle = inHistory ? '#F4E8DD' : '#7BC4F0';
+      ctx.font = '11px "IBM Plex Mono", monospace';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'right';
+      const priceLabel = '$' + valNum.toFixed(2);
+      const lblW = ctx.measureText(priceLabel).width;
+      ctx.fillStyle = 'rgba(10, 24, 40, 0.92)';
+      ctx.fillRect(pad.l + 2, valY - 9, lblW + 8, 18);
+      ctx.strokeStyle = inHistory ? 'rgba(244, 232, 221, 0.5)' : 'rgba(123, 196, 240, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad.l + 2, valY - 9, lblW + 8, 18);
+      ctx.fillStyle = inHistory ? '#F4E8DD' : '#7BC4F0';
+      ctx.fillText(priceLabel, pad.l + 2 + lblW + 4, valY);
+    }
+
+    pathsState = {
+      canvas, history, samplePaths, bands, S0, T,
+      pad, cw, ch, total, histN, steps, todayIdx,
+      drawFrame
+    };
 
     if (animate) {
       const start = performance.now();
@@ -1149,12 +1304,12 @@ footer .legend {
       function frame(now) {
         const t = Math.min(1, (now - start) / duration);
         const eased = 1 - Math.pow(1 - t, 3);
-        drawFrame(eased);
+        drawFrame(eased, -1);
         if (t < 1) requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);
     } else {
-      drawFrame(1);
+      drawFrame(1, -1);
     }
   }
 
@@ -1185,6 +1340,8 @@ footer .legend {
   }
 
   // ===== Histogram =====
+  let histState = null;
+
   function renderHistogram(svg, finalPrices, S0, animate = true) {
     const rect = svg.getBoundingClientRect();
     const w = rect.width, h = rect.height;
@@ -1210,6 +1367,13 @@ footer .legend {
       bins[i]++;
     }
     const maxBin = Math.max(...bins, 1);
+    const total = finalPrices.length;
+    const cumulative = new Array(nBins).fill(0);
+    let running = 0;
+    for (let i = 0; i < nBins; i++) {
+      running += bins[i];
+      cumulative[i] = running;
+    }
 
     const xs = v => pad.l + ((v - lo) / (hi - lo)) * cw;
     const ys = v => pad.t + (1 - v / maxBin) * ch;
@@ -1235,7 +1399,7 @@ footer .legend {
       const color = binMid < S0 ? 'var(--oxblood)' : 'var(--sage)';
       const op = 0.42 + 0.55 * (count / maxBin);
       const animDelay = (i * 0.012).toFixed(2);
-      parts.push(`<rect x="${x}" y="${pad.t + ch}" width="${barW}" height="0" fill="${color}" opacity="${op}" rx="0.5">
+      parts.push(`<rect class="hist-bar" data-bin="${i}" x="${x}" y="${pad.t + ch}" width="${barW}" height="0" fill="${color}" opacity="${op}" rx="0.5">
         ${animate ? `<animate attributeName="y" from="${pad.t + ch}" to="${y}" dur="0.6s" begin="${animDelay}s" fill="freeze" calcMode="spline" keySplines="0.2 0.7 0.3 1"/>
         <animate attributeName="height" from="0" to="${height}" dur="0.6s" begin="${animDelay}s" fill="freeze" calcMode="spline" keySplines="0.2 0.7 0.3 1"/>` : `<set attributeName="y" to="${y}"/><set attributeName="height" to="${height}"/>`}
       </rect>`);
@@ -1260,6 +1424,13 @@ footer .legend {
     parts.push(`<text x="${pad.l - 8}" y="${pad.t - 4}" fill="#6E7E94" font-family="IBM Plex Mono" font-size="9" text-anchor="end" letter-spacing="1">N</text>`);
 
     svg.innerHTML = parts.join('');
+
+    histState = {
+      svg, bins, cumulative, total,
+      lo, hi, binWidth, nBins,
+      pad, cw, ch, S0,
+      xs, ys, barW
+    };
   }
 
   // ===== Stats =====
@@ -1568,6 +1739,178 @@ footer .legend {
     renderHistogram(document.getElementById('hist-svg'), cache.finalPrices, cache.params.S0, animate);
     renderStats(document.getElementById('stats-grid'), cache.stats, cache.params.S0, cache.params.T);
   }
+
+  // ===== Interactivity: tooltips & crosshair =====
+  const pathsTooltip = document.getElementById('paths-tooltip');
+  const histTooltip = document.getElementById('hist-tooltip');
+
+  function positionTooltip(tip, mouseX, mouseY) {
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    const margin = 16;
+    let left = mouseX + margin;
+    let top = mouseY + margin;
+    if (left + tw > window.innerWidth - 8) left = mouseX - margin - tw;
+    if (top + th > window.innerHeight - 8) top = mouseY - margin - th;
+    if (top < 8) top = 8;
+    if (left < 8) left = 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  function fmtDate(d) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  // ----- Paths chart hover -----
+  let lastPathsHoverIdx = -1;
+  function onPathsMove(e) {
+    if (!pathsState) return;
+    const r = pathsState.canvas.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    if (mx < pathsState.pad.l || mx > pathsState.pad.l + pathsState.cw) {
+      return onPathsLeave();
+    }
+    const frac = (mx - pathsState.pad.l) / pathsState.cw;
+    const idx = Math.max(0, Math.min(pathsState.total - 1, Math.round(frac * (pathsState.total - 1))));
+    if (idx !== lastPathsHoverIdx) {
+      lastPathsHoverIdx = idx;
+      pathsState.drawFrame(1, idx);
+    }
+    showPathsTooltip(idx, e.clientX, e.clientY);
+  }
+
+  function onPathsLeave() {
+    if (!pathsState || lastPathsHoverIdx < 0) {
+      pathsTooltip.classList.remove('show');
+      return;
+    }
+    lastPathsHoverIdx = -1;
+    pathsState.drawFrame(1, -1);
+    pathsTooltip.classList.remove('show');
+  }
+
+  function showPathsTooltip(idx, mouseX, mouseY) {
+    const { history, histN, bands, S0, steps } = pathsState;
+    const inHistory = idx < histN;
+    let html;
+
+    if (inHistory) {
+      const d = history[idx];
+      const date = new Date(d.t);
+      const lastDate = new Date(history[histN - 1].t);
+      const daysAgo = Math.round((lastDate - date) / 86400000);
+      const ret = ((d.close / S0) - 1) * 100;
+      const retCls = ret >= 0 ? 'sage' : 'oxblood';
+      html =
+        `<div class="tip-date"><span>${fmtDate(date)}</span><span class="badge">history</span></div>` +
+        `<div class="tip-row"><span class="lbl">Close</span><span class="val gold">${fmtUSD(d.close)}</span></div>` +
+        `<div class="tip-row"><span class="lbl">vs S₀</span><span class="val ${retCls}">${fmtPct(ret)}</span></div>` +
+        `<div class="tip-row"><span class="lbl">Days ago</span><span class="val dim">${daysAgo === 0 ? 'today' : daysAgo + 'd'}</span></div>`;
+    } else {
+      const fIdx = Math.min(steps - 1, Math.max(0, idx - histN + 1));
+      const lastDate = new Date(history[histN - 1].t);
+      const future = new Date(lastDate.getTime() + fIdx * 86400000 * 365 / 252);
+      const yrsFwd = fIdx / 252;
+      const median = bands[2][fIdx];
+      const medRet = ((median / S0) - 1) * 100;
+      const medCls = medRet >= 0 ? 'sage' : 'oxblood';
+      const yrsLabel = yrsFwd >= 1 ? yrsFwd.toFixed(2) + 'y' : Math.round(yrsFwd * 365) + 'd fwd';
+      html =
+        `<div class="tip-date"><span>${fmtDate(future)}</span><span class="badge">forecast · ${yrsLabel}</span></div>` +
+        `<div class="tip-row"><span class="lbl">Median</span><span class="val gold">${fmtUSD(median)}</span></div>` +
+        `<div class="tip-row"><span class="lbl">vs S₀</span><span class="val ${medCls}">${fmtPct(medRet)}</span></div>` +
+        `<div class="tip-row"><span class="lbl">25 – 75%</span><span class="val">${fmtUSD(bands[1][fIdx], 0)} – ${fmtUSD(bands[3][fIdx], 0)}</span></div>` +
+        `<div class="tip-row"><span class="lbl">5 – 95%</span><span class="val dim">${fmtUSD(bands[0][fIdx], 0)} – ${fmtUSD(bands[4][fIdx], 0)}</span></div>`;
+    }
+    pathsTooltip.innerHTML = html;
+    pathsTooltip.classList.add('show');
+    positionTooltip(pathsTooltip, mouseX, mouseY);
+  }
+
+  // ----- Histogram hover -----
+  let lastHistBin = -1;
+  function onHistMove(e) {
+    if (!histState) return;
+    const r = histState.svg.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    if (mx < histState.pad.l || mx > histState.pad.l + histState.cw) {
+      return onHistLeave();
+    }
+    const frac = (mx - histState.pad.l) / histState.cw;
+    const i = Math.max(0, Math.min(histState.nBins - 1, Math.floor(frac * histState.nBins)));
+    if (i !== lastHistBin) {
+      lastHistBin = i;
+      highlightHistBar(i);
+    }
+    showHistTooltip(i, e.clientX, e.clientY);
+  }
+
+  function onHistLeave() {
+    if (!histState) return;
+    if (lastHistBin >= 0) {
+      lastHistBin = -1;
+      const old = histState.svg.querySelector('.hist-hover-rect');
+      if (old) old.remove();
+      histState.svg.querySelectorAll('.hist-bar').forEach(b => b.style.opacity = '');
+    }
+    histTooltip.classList.remove('show');
+  }
+
+  function highlightHistBar(idx) {
+    const old = histState.svg.querySelector('.hist-hover-rect');
+    if (old) old.remove();
+    histState.svg.querySelectorAll('.hist-bar').forEach(b => {
+      const i = parseInt(b.dataset.bin, 10);
+      b.style.opacity = (i === idx) ? '1' : '0.42';
+    });
+    const x = histState.pad.l + (idx / histState.nBins) * histState.cw + 0.5;
+    const y = histState.ys(histState.bins[idx]);
+    const height = histState.pad.t + histState.ch - y;
+    const ns = 'http://www.w3.org/2000/svg';
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('class', 'hist-hover-rect');
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', histState.barW);
+    rect.setAttribute('height', height);
+    rect.setAttribute('fill', 'none');
+    rect.setAttribute('stroke', '#7BC4F0');
+    rect.setAttribute('stroke-width', '1.5');
+    rect.setAttribute('pointer-events', 'none');
+    histState.svg.appendChild(rect);
+  }
+
+  function showHistTooltip(idx, mouseX, mouseY) {
+    const { bins, cumulative, total, lo, binWidth, S0 } = histState;
+    const binLo = lo + idx * binWidth;
+    const binHi = binLo + binWidth;
+    const count = bins[idx];
+    const pct = total ? (count / total) * 100 : 0;
+    const cumBelow = idx > 0 ? cumulative[idx - 1] : 0;
+    const cumPct = total ? (cumBelow / total) * 100 : 0;
+    const isProfit = ((binLo + binHi) / 2) > S0;
+    const cls = isProfit ? 'sage' : 'oxblood';
+    const html =
+      `<div class="tip-date"><span>${fmtUSD(binLo, 0)} – ${fmtUSD(binHi, 0)}</span><span class="badge">${isProfit ? 'profit' : 'loss'}</span></div>` +
+      `<div class="tip-row"><span class="lbl">Paths in bin</span><span class="val ${cls}">${count.toLocaleString()}</span></div>` +
+      `<div class="tip-row"><span class="lbl">Frequency</span><span class="val">${pct.toFixed(2)}%</span></div>` +
+      `<div class="tip-row"><span class="lbl">Cum. ≤ this bin</span><span class="val dim">${cumPct.toFixed(1)}%</span></div>`;
+    histTooltip.innerHTML = html;
+    histTooltip.classList.add('show');
+    positionTooltip(histTooltip, mouseX, mouseY);
+  }
+
+  // Wire up listeners ONCE
+  (function wireInteractivity() {
+    const pathsCanvas = document.getElementById('paths-canvas');
+    pathsCanvas.addEventListener('mousemove', onPathsMove);
+    pathsCanvas.addEventListener('mouseleave', onPathsLeave);
+
+    const histSvg = document.getElementById('hist-svg');
+    histSvg.addEventListener('mousemove', onHistMove);
+    histSvg.addEventListener('mouseleave', onHistLeave);
+  })();
 
   // Form submission
   document.getElementById('params-form').addEventListener('submit', e => {
